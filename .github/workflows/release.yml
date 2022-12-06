@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  BINARY_NAME: ferload-client
+  BUILD_FLAGS: -ldflags="-s -w"
+  COMPRESS_FLAGS: -9
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.19
+      - name: Build Windows
+        run: |
+          GOOS=windows GOARCH=amd64 go build ${{env.BUILD_FLAGS}} -o ${{env.BINARY_NAME}}.exe
+          upx ${{env.COMPRESS_FLAGS}} ${{env.BINARY_NAME}}.exe
+          zip ${{env.BINARY_NAME}}_windows_amd64.zip ${{env.BINARY_NAME}}.exe
+      - name: Build Linux
+        run: |
+          GOOS=linux GOARCH=amd64 go build ${{env.BUILD_FLAGS}} -o ${{env.BINARY_NAME}}
+          upx ${{env.COMPRESS_FLAGS}} ${{env.BINARY_NAME}}
+          zip ${{env.BINARY_NAME}}_linux_amd64.zip ${{env.BINARY_NAME}}
+      - name: Build MacOS
+        run: |
+          GOOS=darwin GOARCH=amd64 go build ${{env.BUILD_FLAGS}} -o ${{env.BINARY_NAME}}
+          upx ${{env.COMPRESS_FLAGS}} ${{env.BINARY_NAME}}
+          zip ${{env.BINARY_NAME}}_macos_amd64.zip ${{env.BINARY_NAME}}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload release assets Windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{env.BINARY_NAME}}_windows_amd64.zip
+          asset_name: ${{env.BINARY_NAME}}_windows_amd64.zip
+          asset_content_type: application/zip
+      - name: Upload release assets Linux
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{env.BINARY_NAME}}_linux_amd64.tar.gz
+          asset_name: ${{env.BINARY_NAME}}_linux_amd64.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload release assets MacOS
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{env.BINARY_NAME}}_macos_amd64.tar.gz
+          asset_name: ${{env.BINARY_NAME}}_macos_amd64.tar.gz
+          asset_content_type: application/gzip
