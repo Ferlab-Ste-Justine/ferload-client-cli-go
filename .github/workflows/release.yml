@@ -28,12 +28,12 @@ jobs:
         run: |
           GOOS=linux GOARCH=amd64 go build ${{env.BUILD_FLAGS}} -o ${{env.BINARY_NAME}}
           upx ${{env.COMPRESS_FLAGS}} ${{env.BINARY_NAME}}
-          zip ${{env.BINARY_NAME}}_linux_amd64.zip ${{env.BINARY_NAME}}
+          tar -czvf ${{env.BINARY_NAME}}_linux_amd64.tar.gz ${{env.BINARY_NAME}}
       - name: Build MacOS
         run: |
           GOOS=darwin GOARCH=amd64 go build ${{env.BUILD_FLAGS}} -o ${{env.BINARY_NAME}}
           upx ${{env.COMPRESS_FLAGS}} ${{env.BINARY_NAME}}
-          zip ${{env.BINARY_NAME}}_macos_amd64.zip ${{env.BINARY_NAME}}
+          tar -czvf ${{env.BINARY_NAME}}_macos_amd64.tar.gz ${{env.BINARY_NAME}}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
